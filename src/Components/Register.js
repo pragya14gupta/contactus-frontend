@@ -1,34 +1,56 @@
 import React, { useState } from "react";
+import { toast } from "react-toastify";
+import axios from "axios";
+
+import "react-toastify/dist/ReactToastify.css";
 
 const Register = () => {
   const [name, setname] = useState("");
-  const [contactnumber, setcontactnumber] = useState("");
+  const [phonenumber, setphonenumber] = useState("");
   const [address, setaddress] = useState("");
   const [otp, setotp] = useState("");
-  const [iscontactverified, setiscontactverified] = useState(false);
+  const [isphoneverified, setisphoneverified] = useState(false);
   const [isrequestedotp, setisrequestedotp] = useState(false);
 
-  const sendotp = async () => {
+  const sendotp = async (channel) => {
     try {
-      setisrequestedotp(true);
+      const response = await axios.post("/api/otp/requestotp", {
+        phonenumber,
+        channel,
+       
+      });
+      console.log(response.data);
+      if (response.data.success === true) {
+        setisrequestedotp(true);
+        toast.success(`Otp sent on ${channel}`);
+      } else {
+        toast.error("Server issue");
+      }
     } catch (error) {
-      console.log(error);
+      console.log(error.toJSON());
     }
   };
   const verifyotp = async () => {
     try {
-      setiscontactverified(true);
-      alert(`Your OTP verified ${otp}`);
+      const response = await axios.post("/api/otp/verifyotp", {
+        // Template for sending data from F->B
+        phonenumber,
+        otp,
+      });
+      if (response.data.success === true) {
+        setisphoneverified(true);
+        toast.success(`Your OTP verified ${otp}`);
+      }
     } catch (error) {
       console.log(error);
     }
   };
   const submitdetails = () => {
     try {
-      if (iscontactverified === false) {
-        return alert("Please verify your contact number first");
+      if (isphoneverified === false) {
+        return toast.warning("Please verify your phone number first");
       } else {
-        alert("your details submitted");
+        toast.success("your details submitted");
       }
     } catch (error) {
       console.log(error);
@@ -36,9 +58,10 @@ const Register = () => {
   };
   return (
     <div>
-      <form>
+      <form className="card container" style={{padding:10,borderColor:"purple"}}>
+      
         <div className="mb-3">
-          <label for="exampleInputEmail1" className="form-label">
+          <label  className="form-label">
             Name
           </label>
           <input
@@ -51,7 +74,7 @@ const Register = () => {
           />
         </div>
         <div className="mb-3">
-          <label for="exampleInputEmail1" className="form-label">
+          <label  className="form-label">
             Address
           </label>
           <input
@@ -64,22 +87,22 @@ const Register = () => {
           />
         </div>
         <div className="mb-3">
-          <label for="exampleInputPassword1" className="form-label">
-            Contact Number
+          <label  className="form-label">
+            Phone Number
           </label>
           <input
-            value={contactnumber}
-            onChange={(e) => setcontactnumber(e.target.value)}
+            value={phonenumber}
+            onChange={(e) => setphonenumber(e.target.value)}
             type="number"
             className="form-control"
-            id="exampleInputPassword1"
-          />
-        </div>
-        {isrequestedotp === true ? (
+            id="exampleInputPassword1"/>
+          </div>
+        {isrequestedotp === true ?
+        (
           <>
             <div className="mb-3">
-              <label for="exampleInputPassword1" className="form-label">
-                Enter OTP sent to contact Number
+              <label  className="form-label">
+                Enter OTP sent to Phone Number
               </label>
               <input
                 value={otp}
@@ -89,6 +112,20 @@ const Register = () => {
                 id="exampleInputPassword1"
               />
             </div>
+            <p>
+              Didn't received OTP?
+              <span
+                onClick={() => sendotp("call")}
+                style={{
+                  color: "blue",
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  fontWeight: "bold",
+                }}
+              >
+                Request a call
+              </span>
+            </p>
             <div className="mb-3">
               <button
                 onClick={() => verifyotp()}
@@ -102,7 +139,7 @@ const Register = () => {
         ) : (
           <div className="mb-3">
             <button
-              onClick={() => sendotp()}
+              onClick={() => sendotp("sms")}
               type="button"
               className="btn btn-primary"
             >
@@ -110,7 +147,6 @@ const Register = () => {
             </button>
           </div>
         )}
-
         <div className="mb-3">
           <button
             onClick={() => submitdetails()}
